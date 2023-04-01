@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
 const { stdout, stderr } = require('process');
 const { parse } = require('rss-to-json');
+const fs = require('fs');
 
 // [] add a test file - don't want this script to mess up my portfolio 😅
 
@@ -15,10 +16,29 @@ const addPortfolioToDesktop = () => {
   })
 }
 
+const requestMediumData = async () => {
+  console.log('Requesting data from Medium...');
+    const medium = await parse('https://medium.com/feed/@spencer.attick');
+    return JSON.stringify(medium);
+}
+
 const requestGoodReadsData = async () => {
   console.log('Requesting data from GoodReads...');
-    const goodReads = await parse('https://medium.com/feed/@spencer.attick');
+    const goodReads = await parse('https://www.goodreads.com/user/updates_rss/104822881');
     return JSON.stringify(goodReads);
+}
+
+const updateStaticFiles = (data, fileName) => {
+  //remove current JSON
+
+  // Write an empty string to the file
+  fs.writeFile(fileName, '', (err) => {
+    if (err) throw err;
+    console.log(`The ${fileName} is now empty!`);
+  });
+  
+  //repopulate with new JSON
+
 }
 
 
@@ -34,8 +54,12 @@ const searchDesktopForPortfolio = () => {
       addPortfolioToDesktop();
     } 
     //make the Goodreads request
-    console.log(await requestGoodReadsData());
+    const goodReadsFileName = '/Users/sattick/Desktop/spencerattick.github.io/assets/staticGoodreadsFeed.json';
+    const mediumFileName = '/Users/sattick/Desktop/spencerattick.github.io/assets/staticMediumFeed.json';
+
+    updateStaticFiles(await requestGoodReadsData(), goodReadsFileName);
     //make the Medium request
+    updateStaticFiles(await requestMediumData(), mediumFileName);
 
   });
 }
