@@ -29,8 +29,6 @@ const requestGoodReadsData = async () => {
 }
 
 const updateStaticFiles = (data, fileName) => {
-  //remove current JSON
-
   // Write an empty string to the file
   fs.writeFile(fileName, '', (err) => {
     if (err) throw err;
@@ -38,7 +36,10 @@ const updateStaticFiles = (data, fileName) => {
   });
   
   //repopulate with new JSON
-
+  fs.writeFile(fileName, data, (err) => {
+    if (err) throw err;
+    console.log(`The ${fileName} is now repopulated!`);
+  });
 }
 
 
