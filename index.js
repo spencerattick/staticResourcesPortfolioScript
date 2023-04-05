@@ -3,9 +3,15 @@ const { stdout, stderr } = require('process');
 const { parse } = require('rss-to-json');
 const fs = require('fs');
 
-// [] add a test file - don't want this script to mess up my portfolio 😅
+// [] refactor exec() functions to use async/await and try/catch
+
 
 const addPortfolioToDesktop = () => {
+  const filePath = '/Users/sattick/Desktop/spencerattick.github.io';
+  if (fs.existsSync(filePath)) {
+    console.log('RETURNNNN')
+    return;
+  }
   exec('cd .. && git clone https://github.com/spencerattick/spencerattick.github.io.git && cd staticResourcesScript', (error, stdout, stderr) => {
     if (error) {
       console.error('\x1b[31m', 'There was an error changing directories or cloning the portfolio repo.');
@@ -42,17 +48,38 @@ const updateStaticFiles = (data, fileName) => {
   });
 }
 
-const pushChangesToGithub = () => {
-  exec('cd .. && cd spencerattick.github.io && npm run build && git add . && git commit -m "update static resources" && git push origin main && cd .. && cd staticResourcesScript', (error, stdout, stderr) => {
-    if (error) {
-      console.log(error);
-      return;
-    }
+const pushChangesToGitHub = async () => {
+  const directoryPath = '/Users/sattick/Desktop/spencerattick.github.io';
+  const commitMessage = 'update static resources';
 
-    console.log('The portfolio has been updated with the latest information.')
+  try {
+    await execPromise(`cd ${directoryPath} && npm install && npm run build`);
+    console.log(`Changed to ${directoryPath} and ran npm install and npm run build`);
 
-  })
-}
+    await execPromise(`cd ${directoryPath} && git add .`);
+    console.log(`Added changes to staging`);
+
+    await execPromise(`cd ${directoryPath} && git commit -m "${commitMessage}"`);
+    console.log(`Committed changes with message "${commitMessage}"`);
+
+    await execPromise(`cd ${directoryPath} && git push`);
+    console.log('Pushed changes to GitHub');
+  } catch (error) {
+    console.error(`Error: ${error}`);
+  }
+};
+
+const execPromise = (command) => {
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(stdout.trim());
+    });
+  });
+};
 
 
 const searchDesktopForPortfolio = async () => {
@@ -74,11 +101,24 @@ const searchDesktopForPortfolio = async () => {
     //make the Medium request
     await updateStaticFiles(await requestMediumData(), mediumFileName);
 
-    pushChangesToGithub();
+    pushChangesToGitHub();
 
   });
 }
 
 
+const runScript = () => {
+  searchDesktopForPortfolio();
+};
 
-searchDesktopForPortfolio();
+if (require.main === module) {
+  // code to execute if this file is run directly (i.e., not required by another file)
+  runScript();
+}
+
+
+module.exports = {
+  addPortfolioToDesktop
+};
+
+
