@@ -5,16 +5,15 @@ const fs = require('fs');
 
 // [] refactor exec() functions to use async/await and try/catch
 
-
 const addPortfolioToDesktop = () => {
   const filePath = '/Users/sattick/Desktop/spencerattick.github.io';
   if (fs.existsSync(filePath)) {
-    console.log('RETURNNNN')
+    console.log('Portfolio already exists on Desktop.')
     return;
   }
   exec('cd .. && git clone https://github.com/spencerattick/spencerattick.github.io.git && cd staticResourcesScript', (error, stdout, stderr) => {
     if (error) {
-      console.error('\x1b[31m', 'There was an error changing directories or cloning the portfolio repo.');
+      console.error('\x1b[31m', 'There was an error changing directories or cloning the portfolio repo.', '\x1b[0m');
       console.log(stderr);
       return;
     }
@@ -23,15 +22,26 @@ const addPortfolioToDesktop = () => {
 }
 
 const requestMediumData = async () => {
-  console.log('Requesting data from Medium...');
+  try {
+    console.log('\x1b[34m', 'Requesting data from Medium...', '\x1b[0m');
+
     const medium = await parse('https://medium.com/feed/@spencer.attick');
     return JSON.stringify(medium);
+  } catch (error) {
+    console.error('\x1b[31m', `Error requesting Medium data: ${error}`, '\x1b[0m');
+    throw error; 
+  }
 }
 
 const requestGoodReadsData = async () => {
-  console.log('Requesting data from GoodReads...');
+  try {
+    console.log('\x1b[34m', 'Requesting data from Goodreads...', '\x1b[0m');
     const goodReads = await parse('https://www.goodreads.com/user/updates_rss/104822881');
     return JSON.stringify(goodReads);
+  } catch (error) {
+    console.error('\x1b[31m', `Error requesting Goodreads data: ${error}`, '\x1b[0m');
+    throw error;
+  }
 }
 
 const updateStaticFiles = (data, fileName) => {
@@ -57,15 +67,16 @@ const pushChangesToGitHub = async () => {
     console.log(`Changed to ${directoryPath} and ran npm install and npm run build`);
 
     await execPromise(`cd ${directoryPath} && git add .`);
-    console.log(`Added changes to staging`);
+    console.log('\x1b[32m', `Added changes to staging`, '\x1b[0m');
 
     await execPromise(`cd ${directoryPath} && git commit -m "${commitMessage}"`);
-    console.log(`Committed changes with message "${commitMessage}"`);
+    console.log('\x1b[32m', `Committed changes with message "${commitMessage}", '\x1b[0m'`);
+    //this fails if there is nothing to commit - need to add another layer of error handling here
 
     await execPromise(`cd ${directoryPath} && git push`);
-    console.log('Pushed changes to GitHub');
+    console.log('\x1b[32m', 'Pushed changes to GitHub', '\x1b[0m');
   } catch (error) {
-    console.error(`Error: ${error}`);
+    console.error('\x1b[31m', `Error: ${error}`, '\x1b[0m');
   }
 };
 
@@ -74,6 +85,7 @@ const execPromise = (command) => {
     exec(command, (error, stdout, stderr) => {
       if (error) {
         reject(error);
+        console.log(stderr);
         return;
       }
       resolve(stdout.trim());
@@ -118,7 +130,9 @@ if (require.main === module) {
 
 
 module.exports = {
-  addPortfolioToDesktop
+  addPortfolioToDesktop,
+  requestMediumData,
+  requestGoodReadsData
 };
 
 
